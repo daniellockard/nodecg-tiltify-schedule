@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<style>
+		body {
+			font-family: sans-serif;
+		}
+
+		.monospace {
+			font-family: monospace;
+		}
+	</style>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.2/css/bootstrap.min.css">
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+</head>
+
+<body>
+	<table class="table table-dark">
+		<tbody id="gameTable">
+			<tr style="background-color: #6441A4 !important;" id="currentGame"></tr>
+		</tbody>
+	</table>
+	<script>
+		var weekday = new Array(7);
+		weekday[0] = "Sunday";
+		weekday[1] = "Monday";
+		weekday[2] = "Tuesday";
+		weekday[3] = "Wednesday";
+		weekday[4] = "Thursday";
+		weekday[5] = "Friday";
+		weekday[6] = "Saturday";
+		var scheduleRep = nodecg.Replicant("schedule", "nodecg-tiltify");
+		scheduleRep.on("change", function (newvalue, oldvalue) {
+			$("#gameTable").empty();
+			$("#gameTable").append(`<tr style="background-color: #6441A4 !important;" id="currentGame"></tr>`);
+			var curTime = Date.now();
+
+			var upNext = [];
+			var current = 0;
+			var toDisplay = 5;
+			currentObject = {};
+
+			newvalue.forEach(processSchedule);
+
+			$("#currentGame").html(`<td>${currentObject.name}</td><td>Now Playing</td>`);
+
+			upNext.forEach(renderSchedule);
+
+			function processSchedule(item, index) {
+				var timeUntil = item.startsAt - curTime;
+				if (timeUntil > 0) {
+					upNext.push(newvalue[index]);
+				}
+				if (timeUntil < 0 && current === 0) {
+					current = timeUntil;
+				}
+				if (timeUntil < 0 && timeUntil > current) {
+					currentObject = newvalue[index];
+				}
+			}
+
+			function renderSchedule(item, index) {
+				if (index >= toDisplay) {
+					return;
+				}
+				name = upNext[index].name;
+				time = new Date(upNext[index].startsAt);
+				var now = new Date();
+				var row = ``
+				if (time.getDay() != now.getDay()) {
+					row = `<tr><td>${name}</td> <td>${weekday[time.getDay()]} @ ${formatAMPM(time)}</td></tr>`;
+				} else {
+					row = `<tr><td>${name}</td> <td>${formatAMPM(time)}</td></tr>`;
+				}
+				$("#gameTable").append(row);
+			}
+
+			function formatAMPM(date) {
+				var hours = date.getHours();
+				var minutes = date.getMinutes();
+				var ampm = hours >= 12 ? "pm" : "am";
+				hours = hours % 12;
+				hours = hours ? hours : 12; // the hour '0' should be '12'
+				minutes = minutes < 10 ? "0" + minutes : minutes;
+				var strTime = hours + ":" + minutes + " " + ampm;
+				return strTime;
+			}
+
+		});
+	</script>
+</body>
+
+</html>
